@@ -29,14 +29,20 @@ For the python scripts I would recommend creating virtual environments for each 
 
 The python scripts available:
 
-- A
+- `genetic-algorithm`:
+- `clustering`:
+- `a-b-plot`:
 
 ## rust
 
-To run the rust scripts first install the 'rustup' tool:
+To run the rust scripts first install the `rustup` tool:
 
 ```shell
 > curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-This will install the tools 'rustup', 'rustc' and 'cargo' (but we will only need to use 'cargo').
+This will install the tools `rustup`, `rustc` and `cargo` (but we will only need to use `cargo`).
+
+The rust scripts available:
+
+- `rust-analysis`: This script contains multiple commands to carry out analysis to the LAMMPS output trajectory files

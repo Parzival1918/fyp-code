@@ -10,7 +10,7 @@ This is the GitHub repository containing the code written by me for the final ye
 
 For the python scripts I would recommend creating virtual environments for each script to avoid conflicts between different packages and versions. To create the virtual environment run:
 
-'''shell
+```shell
 # Create a virtual environment in the folder .venv/
 # If python complains there is no module named venv, install it using 'pip install virtualenv' and try again
 > python3 -m venv .venv
@@ -25,7 +25,7 @@ For the python scripts I would recommend creating virtual environments for each 
 
 # To deactivate the virtual environment
 > deactivate
-'''
+```
 
 The python scripts available:
 
@@ -35,8 +35,8 @@ The python scripts available:
 
 To run the rust scripts first install the 'rustup' tool:
 
-'''shell
+```shell
 > curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-'''
+```
 
 This will install the tools 'rustup', 'rustc' and 'cargo' (but we will only need to use 'cargo').

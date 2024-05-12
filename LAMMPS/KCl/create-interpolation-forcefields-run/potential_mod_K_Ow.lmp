@@ -1,0 +1,171 @@
+###################################################
+###################################################
+## FREE ENERGY CALCULATION VIA EINSTEIN CRYSTALS ##
+## Dr S. R. Yeandel 12/05/2021                   ##
+## modified by Pedro Juan Royo 22/02/24          ##
+###################################################
+###################################################
+
+###############################################################################################################################
+# NOTES #######################################################################################################################
+###############################################################################################################################
+
+# To be written...
+
+###############################################################################################################################
+# TI SETTINGS #################################################################################################################
+###############################################################################################################################
+
+# Einstein settings
+variable ein_lambda equal 0.0000
+variable ein_delta equal 0.0
+#	variable ein_delta equal 0.01
+#	variable ein_delta equal -0.01
+
+# Potential settings
+variable pot_lambda equal 1.0000
+variable pot_delta equal 0.0
+#	variable pot_delta equal 0.01
+#	variable pot_delta equal -0.01
+
+###############################################################################################################################
+# INTERACTION SETTINGS ########################################################################################################
+###############################################################################################################################
+
+# einstein group
+group einstein_group type 3 4
+
+# einstein spring constant
+variable ein_spring equal 10.0
+
+# Additional potential settings are located further down.
+# That section requires extensive modification for each system and so is impractical to include here.
+
+###############################################################################################################################
+# HEADER OUTPUT ###############################################################################################################
+###############################################################################################################################
+
+# print file header
+print '###############################' file TI.txt screen no
+print '###############################' append TI.txt screen no
+print '## THERMODYNAMIC INTEGRATION ##' append TI.txt screen no
+print '###############################' append TI.txt screen no
+print '###############################' append TI.txt screen no
+print '' append TI.txt screen no
+
+###############################################################################################################################
+# EINSTEIN CRYSTAL ############################################################################################################
+###############################################################################################################################
+# mix and output
+
+# calculate mixing function
+variable ein_mix equal (v_ein_lambda^5)*(70*(v_ein_lambda^4)-315*(v_ein_lambda^3)+540*(v_ein_lambda^2)-420*v_ein_lambda+126)
+variable ein_dmix equal 630*((v_ein_lambda^2)-v_ein_lambda)^4
+variable ein_eff equal v_ein_mix*(1+v_ein_delta)
+
+# output parameters
+print '####################' append TI.txt screen no
+print '# EINSTEIN CRYSTAL #' append TI.txt screen no
+print '####################' append TI.txt screen no
+print '' append TI.txt screen no
+print 'Ein_Lambda: ${ein_lambda}' append TI.txt screen no
+print 'Ein_Delta: ${ein_delta}' append TI.txt screen no
+print 'Mixing: Polynomial' append TI.txt screen no
+print 'F(Ein_Lambda): ${ein_mix}' append TI.txt screen no
+print 'F`(Ein_Lambda): ${ein_dmix}' append TI.txt screen no
+print '' append TI.txt screen no
+
+######################################################
+# scale parameters
+
+# calculate scaled spring
+variable scaled_spring equal v_ein_spring*v_ein_eff
+
+######################################################
+# apply parameters
+
+# add harmonic wells
+if "${ein_lambda} > 0.0" then                                          &
+	"fix einstein einstein_group spring/self ${scaled_spring}"     &
+	"fix_modify einstein energy yes"                               &
+
+############################################################################################################################
+# POTENTIAL SCALING ########################################################################################################
+############################################################################################################################
+# mix and output
+
+# calculate mixing function
+variable pot_mix equal (v_pot_lambda^5)*(70*(v_pot_lambda^4)-315*(v_pot_lambda^3)+540*(v_pot_lambda^2)-420*v_pot_lambda+126)
+variable pot_dmix equal 630*((v_pot_lambda^2)-v_pot_lambda)^4
+variable pot_eff equal v_pot_mix*(1+v_pot_delta)
+
+# output parameters
+print '#####################' append TI.txt screen no
+print '# POTENTIAL SCALING #' append TI.txt screen no
+print '#####################' append TI.txt screen no
+print '' append TI.txt screen no
+print 'Pot_Lambda: ${pot_lambda}' append TI.txt screen no
+print 'Pot_Delta: ${pot_delta}' append TI.txt screen no
+print 'Mixing: Polynomial' append TI.txt screen no
+print 'F(Pot_Lambda): ${pot_mix}' append TI.txt screen no
+print 'F`(Pot_Lambda): ${pot_dmix}' append TI.txt screen no
+print '' append TI.txt screen no
+
+######################################################
+# scale parameters
+
+# calculate scaled charges
+variable scaled_q1 equal -0.8200						# Ow
+variable scaled_q2 equal  0.4100						# Hw
+variable scaled_q3 equal  1.0000*v_pot_eff					# K
+variable scaled_q4 equal -1.0000*v_pot_eff					# Cl
+
+# calculate scaled pair coefficients
+variable scaled_1_1_ljsoft_lambda equal 1.00000					# Ow - Ow
+variable scaled_1_3_ljsoft_lambda equal v_pot_eff				# Ow - K
+variable scaled_1_4_ljsoft_lambda equal v_pot_eff				# Ow - Cl
+variable scaled_3_3_nm equal 0.0186342*v_pot_eff				# K - K
+variable scaled_3_4_nm equal 0.0032142*v_pot_eff				# K - Cl
+variable scaled_4_4_nm equal 0.0005544*v_pot_eff                                # Cl - Cl
+
+# calculate scaled bond coefficients
+variable scaled_b1_harm equal 22.965						# Ow - Hw bond
+
+# calculate scaled angle coefficients
+variable scaled_a1_harm equal 1.6455						# Hw - Ow - Hw angle
+
+######################################################
+# apply parameters
+
+# set charges
+set type 1 charge ${scaled_q1}
+set type 2 charge ${scaled_q2}
+set type 3 charge ${scaled_q3}
+set type 4 charge ${scaled_q4}
+
+# pair/bond/angle/improper style
+pair_style hybrid/overlay coul/long 9.0 lj/cut/soft 1.0 0.01 12.0 nm/cut 9.0
+bond_style harmonic
+angle_style harmonic 
+
+# pair coefficients
+pair_coeff * * coul/long							# long-range coulombics
+pair_coeff 1 1 lj/cut/soft 0.00674  3.16549  ${scaled_1_1_ljsoft_lambda}	# Ow - Ow
+pair_coeff 1 3 lj/cut/soft 0.011    3.1      ${scaled_1_3_ljsoft_lambda}	# Ow - K
+pair_coeff 1 4 lj/cut/soft 0.001933 3.99797  ${scaled_1_4_ljsoft_lambda}	# Ow - Cl
+pair_coeff 3 3 nm/cut ${scaled_3_3_nm} 3.186  12.0 6.0				# K - K
+pair_coeff 3 4 nm/cut ${scaled_3_4_nm} 4.3038 12.0 6.0				# K - Cl
+pair_coeff 4 4 nm/cut ${scaled_4_4_nm} 5.422  12.0 6.0				# Cl - Cl
+
+# bond coefficients
+bond_coeff 1 ${scaled_b1_harm} 1.012						# Ow - Hw bond
+
+# angle coefficients
+angle_coeff 1 ${scaled_a1_harm} 113.24						# Hw - Ow - Hw angle
+
+# coulombic solver
+kspace_style pppm 1.0e-5							# usual PPPM accuracy 1.0e-5
+
+############################################################################################################################
+# END SCRIPT ###############################################################################################################
+############################################################################################################################

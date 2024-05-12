@@ -1,0 +1,182 @@
+##############################################
+##############################################
+## LAMMPS Einstein crystal script           ##
+## Written by Dr Stephen R. Yeandel         ##
+## 02/11/2020                               ##
+## modified by Pedro Juan Royo 25/02/24     ##
+##############################################
+##############################################
+
+#############################################################################################################################
+## VARIABLES ################################################################################################################
+#############################################################################################################################
+
+variable seed equal          94275     # random number seed
+variable T equal             300.0     # temperature (kelvin)
+variable dt equal            0.001     # timestep (femtoseconds)
+variable screen equal       100000     # screen output frequency (steps)
+variable Esample equal       10000     # energy sampling and traj output frequency (steps)
+
+variable transition_steps equal 10
+variable transition_run equal 50000
+
+variable mod_ff equal            0     # set flag to use modified forcefield file (1 = yes)
+
+variable freeze equal         15.0     # freeze height (angstroms)
+
+variable rep equal               0     # replication flag (1 = TRUE)
+variable repx equal              1     # replication factor for x
+variable repy equal              1     # replication factor for y
+variable repz equal              1     # replication factor for z
+
+variable Nprod equal      10000000     # production time (steps)
+
+variable traj equal              1     # 1 = print traj files
+
+#############################################################################################################################
+## SYSTEM SETTINGS ##########################################################################################################
+#############################################################################################################################
+
+#define units system
+units metal
+
+#data file format
+atom_style full
+
+#processor mapping
+processors * * * grid numa
+
+#set periodicity
+boundary p p p
+
+#read data
+read_data data.lmp
+
+#replicate if requested
+if "${rep} == 1" then "replicate ${repx} ${repy} ${repz}"
+
+#############################################################################################################################
+## TIME SETTINGS ############################################################################################################
+#############################################################################################################################
+
+#timestep
+timestep ${dt}
+
+#time integrator
+run_style verlet
+
+#############################################################################################################################
+## FORCEFIELD SETTINGS ######################################################################################################
+#############################################################################################################################
+
+#use TI script for potentials
+if "${mod_ff} == 1" then &
+        "include potential_mod_K_Ow.lmp" &
+else &
+        "include potential.lmp"                                                                         # script for Einstein crystal
+
+#additional options
+special_bonds lj/coul 0.0 0.0 0.0								# default
+pair_modify tail no										# tail correction for Ow - Ow
+
+#slab correction
+fix x_walls all wall/lj93 zlo EDGE 0.001 3.5 3.0 zhi EDGE 0.001 3.5 3.0 units box pbc yes	# wall repulsion for slabs
+include slab_correction.lmp									# slab dipole correction
+
+#plumed script
+fix metadynamics all plumed plumedfile plumed.in outfile plumed.log
+
+#############################################################################################################################
+## CHANGE FF RUN ############################################################################################################
+#############################################################################################################################
+
+#define regions
+region static_region block INF INF INF INF INF ${freeze}
+
+#define groups
+group static_group region static_region
+group static_group include molecule
+group dynamic_group subtract all static_group
+
+#create velocities
+velocity static_group set 0.0 0.0 0.0
+velocity dynamic_group create $T ${seed} mom yes rot yes dist gaussian
+
+#set langevin thermostat
+fix A dynamic_group nve
+fix B dynamic_group langevin $T $T 0.1 ${seed} zero yes
+
+#re-define thermodynamic temperature
+uncompute thermo_temp
+compute thermo_temp dynamic_group temp
+
+#setup thermo output
+thermo ${screen}
+thermo_style custom step temp press vol etotal pe ke
+
+# variable epsilon_vals vector [0.011,0.0110206,0.0110412,0.0110618,0.0110824,0.011103,0.0111236,0.0111442,0.0111648,0.0111854,0.011206]
+# variable sigma_vals vector [3.1,3.0901948,3.0803896,3.0705844,3.0607792,3.050974,3.0411688,3.0313636,3.0215584,3.0117532,3.001948]
+variable i loop 0 ${transition_steps}
+
+label loop
+
+variable sigma_val equal "3.1 - 0.098052*v_i/v_transition_steps"
+variable epsilon_val equal "0.011 + 0.000206*v_i/v_transition_steps"
+print "SIGMA ${sigma_val}"
+print "EPSILON ${epsilon_val}"
+pair_coeff 1 3 lj/cut/soft ${epsilon_val} ${sigma_val} ${scaled_1_3_ljsoft_lambda}
+
+reset_timestep 0
+
+#balance processors
+balance 1.0 shift xyz 100 1.0
+
+run ${transition_run} # 50ps
+
+next i
+jump input.lmp loop
+
+#############################################################################################################################
+## PRODUCTION RUN ###########################################################################################################
+#############################################################################################################################
+
+#open new log file
+log prod_log.lmp
+
+#reset timestep
+reset_timestep 0
+
+#trajectory output
+if "${traj} == 1" then &
+	"dump 1 all custom ${Esample} prod_traj.lmp.gz id type xs ys zs ix iy iz"
+
+#balance processors
+balance 1.0 shift xyz 100 1.0
+
+#run data collection
+run ${Nprod}
+
+#write new data file
+write_data prod_data.lmp nocoeff
+
+#############################################################################################################################
+## CLEAN ####################################################################################################################
+#############################################################################################################################
+
+#clean up fixes
+unfix A
+unfix B
+
+#clean up computes
+
+#clean up variables
+
+#clean up groups
+
+#clean up trajectory output
+if "${traj} == 1" then &
+"undump 1"
+
+#############################################################################################################################
+## END SCRIPT ###############################################################################################################
+#############################################################################################################################

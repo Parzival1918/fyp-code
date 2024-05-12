@@ -6,7 +6,7 @@ This is the GitHub repository containing the code written by me for the final ye
 
 ## python
 
-> All the python scripts I wrote were ran using **python v3.11**. Although they should be able to run with any version above **v3.9**.
+> All the python scripts I wrote were ran using **python v3.11**. Although they should be able to run with any version above and including **v3.9**.
 
 For the python scripts I would recommend creating virtual environments for each script to avoid conflicts between different packages and versions. To create the virtual environment run:
 
@@ -29,9 +29,8 @@ For the python scripts I would recommend creating virtual environments for each 
 
 The python scripts available:
 
-- `genetic-algorithm`:
-- `clustering`:
-- `a-b-plot`:
+- `genetic-algorithm`: Genetic algorithm script to optimise the nitrate-water interaction.
+- `a-b-plot`: Generate surface-bulk atoms plot from a `joined.csv` file generates with the `joincsv` subcommand from the `rust-analysis` rust script.
 
 ## rust
 
@@ -50,3 +49,15 @@ The rust scripts available:
 ## bash
 
 Bash scripts that I used in the Stanage HPC to run the simulations and check their progress.
+
+## LAMMPS
+
+Scripts used to create the simulations to run with LAMMPS.
+
+The available scripts are:
+
+- `KNO3`
+  - A
+- `KCl`
+  - `create-slab`: Create a crystal slab.
+  - `create-solution`: Create a solution with different numbr of ions.

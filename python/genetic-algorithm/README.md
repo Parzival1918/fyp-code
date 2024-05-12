@@ -1,4 +1,4 @@
-# genetic-algorithm
+# genetic-algorithm
 
 Genetic algorithm to find the best fit of the nitrate-water interaction to the RDF of the paper ![https://doi.org/10.1021/acs.jpcb.7b06809](https://doi.org/10.1021/acs.jpcb.7b06809).
 

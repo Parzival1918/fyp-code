@@ -1,5 +1,7 @@
 # genetic-algorithm
 
+> Follow the instructions in the ![README](../../README.md) of the repo to create a virtual environment and install the dependencies from the requirements.txt file
+
 Genetic algorithm to find the best fit of the nitrate-water interaction to the RDF of the paper ![https://doi.org/10.1021/acs.jpcb.7b06809](https://doi.org/10.1021/acs.jpcb.7b06809).
 
 **IMPORTANT**, for this script to work you must first install and add to your PATH environment variable ![TRAVIS](http://www.travis-analyzer.de/).

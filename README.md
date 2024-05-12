@@ -46,3 +46,7 @@ This will install the tools `rustup`, `rustc` and `cargo` (but we will only need
 The rust scripts available:
 
 - `rust-analysis`: This script contains multiple commands to carry out analysis to the LAMMPS output trajectory files
+
+## bash
+
+Bash scripts that I used in the Stanage HPC to run the simulations and check their progress.

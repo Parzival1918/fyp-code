@@ -17,6 +17,8 @@ variable dt equal            0.001     # timestep (femtoseconds)
 variable screen equal       100000     # screen output frequency (steps)
 variable Esample equal       10000     # energy sampling and traj output frequency (steps)
 
+variable mod_ff equal            1     # set flag to use modified forcefield file (1 = yes)
+
 variable freeze equal         15.0     # freeze height (angstroms)
 
 variable rep equal               0     # replication flag (1 = TRUE)
@@ -65,7 +67,10 @@ run_style verlet
 #############################################################################################################################
 
 #use TI script for potentials
-include potential.lmp										# script for Einstein crystal
+if "${mod_ff} == 1" then &
+        "include potential_mod_K_Ow.lmp" &
+else &
+        "include potential.lmp"                                                                         # script for Einstein crystal
 
 #additional options
 special_bonds lj/coul 0.0 0.0 0.0								# default

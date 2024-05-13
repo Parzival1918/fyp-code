@@ -17,12 +17,14 @@ variable dt equal            0.001     # timestep (femtoseconds)
 variable screen equal        10000     # screen output frequency (steps)
 variable Esample equal        1000     # energy sampling and traj output frequency (steps)
 
-variable slab string    rs_100.lmp     # slab filename
-variable sol string     4M_100.lmp     # solution filename
+variable mod_ff equal            1     # set flag to use modified forcefield file (1 = yes)
+
+variable slab string    rs_100_8_8_8.lmp     # slab filename
+variable sol string     1.4M_100_mod_K_Ow.lmp     # solution filename
                                        # check that lx and ly of both files match!
 
-variable freeze equal         50.5     # freeze height, set to height of slab (angstroms)
-variable sol_shift equal      40.5     # z shift when attaching solution (angstroms)
+variable freeze equal         53.0     # freeze height, set to height of slab (angstroms)
+variable sol_shift equal      43.5     # z shift when attaching solution (angstroms)
 
 variable rep equal               0     # replication flag (1 = TRUE)
 variable repx equal              4     # replication factor for x
@@ -73,7 +75,10 @@ run_style verlet
 #############################################################################################################################
 
 #use TI script for potentials
-include potential.lmp										# script for Einstein crystal
+if "${mod_ff} == 1" then &
+        "include potential_mod_K_Ow.lmp" &
+else &
+        "include potential.lmp"                                                                         # script for Einstein crystal
 
 #additional options
 special_bonds lj/coul 0.0 0.0 0.0								# default

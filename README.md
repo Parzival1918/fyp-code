@@ -61,3 +61,4 @@ The available scripts are:
 - `KCl`
   - `create-slab`: Create a crystal slab.
   - `create-solution`: Create a solution with different numbr of ions.
+  - `create-CmuMD-sim`: Create all the files to run a CmuMD simulation. You will first have to create slabs and solutions.

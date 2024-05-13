@@ -17,10 +17,12 @@ variable dt equal            0.001     # timestep (femtoseconds)
 variable screen equal        10000     # screen output frequency (steps)
 variable Esample equal        1000     # energy sampling and traj output frequency (steps)
 
-variable res string     4M_100.lmp     # reservoir filename
+variable mod_ff equal            1     # set flag to use modified forcefield file (1 = yes)
+
+variable res string     7.7M_100_mod_K_Ow.lmp     # reservoir filename
                                        # check that lx and ly match the one of data.lmp!
 
-variable freeze equal        100.5     # freeze height, set to height of slab and solution (angstroms)
+variable freeze equal         94.0     # freeze height, set to height of slab and solution (angstroms)
 variable res_shift equal      90.5     # z shift when attaching reservoir (angstroms)
 
 variable rep equal               0     # replication flag (1 = TRUE)
@@ -28,7 +30,7 @@ variable repx equal              1     # replication factor for x
 variable repy equal              1     # replication factor for y
 variable repz equal              1     # replication factor for z
 
-variable Nprod equal        500000     # production time (steps)
+variable Nprod equal        600000     # production time (steps)
 
 variable traj equal              1     # 1 = print traj files
 
@@ -72,7 +74,10 @@ run_style verlet
 #############################################################################################################################
 
 #use TI script for potentials
-include potential.lmp										# script for Einstein crystal
+if "${mod_ff} == 1" then &
+        "include potential_mod_K_Ow.lmp" &
+else &
+        "include potential.lmp"                                                                         # script for Einstein crystal
 
 #additional options
 special_bonds lj/coul 0.0 0.0 0.0								# default

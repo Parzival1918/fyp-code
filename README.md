@@ -56,8 +56,6 @@ Scripts used to create the simulations to run with LAMMPS.
 
 The available scripts are:
 
-- `KNO3`
-  - A
 - `KCl`
   - `create-slab`: Create a crystal slab.
   - `create-solution`: Create a solution with different numbr of ions.

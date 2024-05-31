@@ -18,7 +18,7 @@ variable dt equal            0.001     # timestep (femtoseconds)
 variable screen equal        10000     # screen output frequency (steps)
 variable Esample equal        1000     # energy sampling and traj output frequency (steps)
 
-variable pot_file equal potential_no3_charge.lmp # name of potential file (in the potentials dir)
+variable pot_file string potential_no3_charge.lmp # name of potential file (in the potentials dir)
 
 variable rep equal               0     # replication flag (1 = TRUE)
 variable repx equal              1     # replication factor for x

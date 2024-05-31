@@ -19,7 +19,7 @@ variable P equal               0.0     # pressure (bar)
 variable dt equal            0.001     # timestep (femtoseconds)
 variable screen equal           10     # screen and writing output frequency (steps)
 
-variable pot_file equal potential_no3_charge.lmp # name of potential file (in the potentials dir)
+variable pot_file string potential_no3_charge.lmp # name of potential file (in the potentials dir)
 
 variable rep equal               0     # replication flag (1 = TRUE)
 variable repx equal              1     # replication factor for x

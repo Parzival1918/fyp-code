@@ -1,0 +1,153 @@
+##############################################
+##############################################
+## LAMMPS Einstein crystal script           ##
+## Written by Dr Stephen R. Yeandel         ##
+## 02/11/2020                               ##
+## modified by Pedro Juan Royo 25/02/24     ##
+##############################################
+##############################################
+
+#############################################################################################################################
+## VARIABLES ################################################################################################################
+#############################################################################################################################
+
+variable seed equal          94275     # random number seed
+variable T equal             300.0     # temperature (kelvin)
+variable dt equal            0.001     # timestep (femtoseconds)
+variable screen equal        10000     # screen output frequency (steps)
+variable Esample equal        1000     # energy sampling and traj output frequency (steps)
+
+variable res string     4M_100.lmp     # reservoir filename
+                                       # check that lx and ly match the one of data.lmp!
+variable pot_file string potential_no3_charge.lmp # potential file (in the potentials dir)
+
+variable freeze equal        100.5     # freeze height, set to height of slab and solution (angstroms)
+variable res_shift equal      90.5     # z shift when attaching reservoir (angstroms)
+
+variable rep equal               0     # replication flag (1 = TRUE)
+variable repx equal              1     # replication factor for x
+variable repy equal              1     # replication factor for y
+variable repz equal              1     # replication factor for z
+
+variable Nprod equal        500000     # production time (steps)
+
+variable traj equal              1     # 1 = print traj files
+
+#############################################################################################################################
+## SYSTEM SETTINGS ##########################################################################################################
+#############################################################################################################################
+
+#define units system
+units metal
+
+#data file format
+atom_style full
+
+#processor mapping
+processors * * * grid numa
+
+#set periodicity
+boundary p p p
+
+#read data
+read_data data.lmp
+
+#add reservoir
+read_data solutions/${res} add append shift 0.0 0.0 ${res_shift}
+
+#replicate if requested
+if "${rep} == 1" then "replicate ${repx} ${repy} ${repz}"
+
+#############################################################################################################################
+## TIME SETTINGS ############################################################################################################
+#############################################################################################################################
+
+#timestep
+timestep ${dt}
+
+#time integrator
+run_style verlet
+
+#############################################################################################################################
+## FORCEFIELD SETTINGS ######################################################################################################
+#############################################################################################################################
+
+#use TI script for potentials
+include potentials/${pot_file}										# script for Einstein crystal
+
+#additional options
+special_bonds lj/coul 0.0 0.0 0.0								# default
+pair_modify tail no										# tail correction for Ow - Ow
+
+#slab correction
+fix x_walls all wall/lj93 zlo EDGE 0.001 3.5 3.0 zhi EDGE 0.001 3.5 3.0 units box pbc yes	# wall repulsion for slabs
+include slab_correction.lmp									# slab dipole correction
+
+#############################################################################################################################
+## PRODUCTION RUN ###########################################################################################################
+#############################################################################################################################
+
+#open new log file
+log prod_log.lmp
+
+#reset timestep
+reset_timestep 0
+
+#define regions
+region static_region block INF INF INF INF INF ${freeze}
+
+#define groups
+group static_group region static_region
+group static_group include molecule
+group dynamic_group subtract all static_group
+
+#create velocities
+velocity static_group set 0.0 0.0 0.0
+velocity dynamic_group create $T ${seed} mom yes rot yes dist gaussian
+
+#set langevin thermostat
+fix A dynamic_group nve
+fix B dynamic_group langevin $T $T 0.1 ${seed} zero yes
+
+#re-define thermodynamic temperature
+uncompute thermo_temp
+compute thermo_temp dynamic_group temp
+
+#setup thermo output
+thermo ${screen}
+thermo_style custom step temp press vol etotal pe ke
+
+#trajectory output
+if "${traj} == 1" then &
+	"dump 1 all custom ${Esample} prod_traj.lmp.gz id type xs ys zs ix iy iz"
+
+#balance processors
+balance 1.0 shift xyz 100 1.0
+
+#run data collection
+run ${Nprod}
+
+#write new data file
+write_data prod_data.lmp nocoeff
+
+#############################################################################################################################
+## CLEAN ####################################################################################################################
+#############################################################################################################################
+
+#clean up fixes
+unfix A
+unfix B
+
+#clean up computes
+
+#clean up variables
+
+#clean up groups
+
+#clean up trajectory output
+if "${traj} == 1" then &
+"undump 1"
+
+#############################################################################################################################
+## END SCRIPT ###############################################################################################################
+#############################################################################################################################

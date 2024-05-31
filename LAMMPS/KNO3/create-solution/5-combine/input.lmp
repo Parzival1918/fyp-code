@@ -50,9 +50,11 @@ boundary p p p
 
 #read data
 variable offset_2 equal 2*${sol_offset}
+variable offset_3 equal 3*${sol_offset}
 read_data data.lmp
 read_data data.lmp add append shift 0.0 0.0 ${sol_offset}
 read_data data.lmp add append shift 0.0 0.0 ${offset_2}
+read_data data.lmp add append shift 0.0 0.0 ${offset_3}
 
 #replicate if requested
 if "${rep} == 1" then "replicate ${repx} ${repy} ${repz}"

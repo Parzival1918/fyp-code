@@ -61,3 +61,8 @@ The available scripts are:
   - `create-solution`: Create a solution with different numbr of ions.
   - `create-CmuMD-sim`: Create all the files to run a CmuMD simulation. You will first have to create slabs and solutions.
   - `create-interpolation-forcefields-run`: This is an example of the input files required to run a KCl CmuMD simulation that slowly shifts the forcefield from the modified to the original one. It is not setup so that it can easily be modified, I will work on this soon.
+- `KNO3`
+  - `create-slab`: Create a crystal slab.
+  - `create-solution`: Create a solution with different numbr of ions.
+  - `create-CmuMD-sim`: Create all the files to run a CmuMD simulation. You will first have to create slabs and solutions.
+

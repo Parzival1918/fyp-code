@@ -1,0 +1,176 @@
+##############################################
+##############################################
+## LAMMPS lattice equi script               ##
+## Written by Dr Stephen R. Yeandel         ##
+## 12/05/2021                               ##
+## modified by Pedro Juan Royo 24/02/24     ##
+##############################################
+##############################################
+
+#############################################################################################################################
+## VARIABLES ################################################################################################################
+#############################################################################################################################
+
+variable seed equal            94275     # random number seed
+variable T equal               300.0     # temperature (kelvin)
+variable P equal                 0.0     # pressure (bar)
+variable isotropy equal            1     # isotropy flag (1 = isotropic, 2 = anisotropic, 3 = full triclinic,
+                                         # 4 = triclinic with xy and xz fixed, 5 = triclinic with x, xy and xz fixed)
+
+variable cell_file string rs_100.lmp     # name of the unit-cell file (in the unit-cells dir)
+variable pot_file string  potential.lmp     # name of the potential file (in the potentials dir)
+
+variable dt equal              0.001     # timestep (femtoseconds)
+variable screen equal           1000     # screen and writing output frequency (steps)
+
+variable rep equal                 1     # replication flag (1 = TRUE)
+variable repx equal               12     # replication factor for x
+variable repy equal               12     # replication factor for y
+variable repz equal               12     # replication factor for z
+
+variable Nlatt equal          600000     # lattice averaging time (steps)
+variable ldelay equal         100000     # delay before starting lattice averaging (steps)
+variable lsample equal           100     # lattice vector sampling frequency (steps)
+
+variable traj equal                1     # 1 = print traj files
+
+#############################################################################################################################
+## SYSTEM SETTINGS ##########################################################################################################
+#############################################################################################################################
+
+#define units system
+units metal
+
+#data file format
+atom_style full
+
+#processor mapping
+processors * * * grid numa
+
+#set periodicity
+boundary p p p
+
+#read data
+read_data unit-cells/${cell_file}
+
+#replicate if requested
+if "${rep} == 1" then "replicate ${repx} ${repy} ${repz}"
+
+#############################################################################################################################
+## TIME SETTINGS ############################################################################################################
+#############################################################################################################################
+
+#timestep
+timestep ${dt}
+
+#time integrator
+run_style verlet
+
+#############################################################################################################################
+## FORCEFIELD SETTINGS ######################################################################################################
+#############################################################################################################################
+
+#use TI script for potentials
+include potentials/${pot_file}										# script for Einstein crystal
+
+#additional options
+special_bonds lj/coul 0.0 0.0 0.0								# default
+pair_modify tail no										# tail correction for Ow - Ow
+
+#############################################################################################################################
+## LATTICE EQUILIBRATION ####################################################################################################
+#############################################################################################################################
+
+#open new log file
+log lattequi_log.lmp
+
+#reset timestep
+reset_timestep 0
+
+#create velocities
+velocity all create $T ${seed} mom yes rot yes dist gaussian
+
+#set variables
+variable myLx equal lx
+variable myLy equal ly
+variable myLz equal lz
+variable myxy equal xy
+variable myxz equal xz
+variable myyz equal yz
+
+#set fixes
+fix A all momentum 1 linear 1 1 1 angular rescale
+if "${isotropy} == 1" then "fix B all npt temp $T $T 0.1 iso $P $P 1.0"
+if "${isotropy} == 2" then "fix B all npt temp $T $T 0.1 aniso $P $P 1.0"
+if "${isotropy} == 3" then "fix B all npt temp $T $T 0.1 tri $P $P 1.0"
+if "${isotropy} == 4" then "fix B all npt temp $T $T 0.1 x $P $P 1.0 y $P $P 1.0 z $P $P 1.0 yz 0.0 0.0 1.0"
+if "${isotropy} == 5" then "fix B all npt temp $T $T 0.1 y $P $P 1.0 z $P $P 1.0 yz 0.0 0.0 1.0"
+
+#set tracking fix
+fix C all ave/time ${lsample} $((v_Nlatt-v_ldelay)/v_lsample) ${Nlatt} v_myLx v_myLy v_myLz v_myxy v_myxz v_myyz mode scalar ave one
+
+#setup thermo output
+thermo ${screen}
+thermo_style custom step temp press vol etotal pe ke lx ly lz xy xz yz
+
+#trajectory output
+if "${traj} == 1" then &
+	"dump 1 all custom ${screen} lattequi_traj.lmp.gz id type xs ys zs ix iy iz"
+
+#balance processors
+balance 1.0 shift xyz 10 1.0
+
+#run lattice equilibration
+run ${Nlatt}
+
+#change box size/shape
+if "(${isotropy} == 1) || (${isotropy} == 2)" then "change_box all x final 0.0 $(f_C[1]) y final 0.0 $(f_C[2]) z final 0.0 $(f_C[3]) remap units box"
+if "${isotropy} >= 3" then "change_box all x final 0.0 $(f_C[1]) y final 0.0 $(f_C[2]) z final 0.0 $(f_C[3]) xy final $(f_C[4]) xz final $(f_C[5]) yz final $(f_C[6]) remap units box"
+
+#write new data file
+write_data lattequi_data.lmp nocoeff
+
+#print to screen the new lattice values
+variable cell_lx equal f_C[1]/v_repx
+variable cell_ly equal f_C[2]/v_repy
+variable cell_lz equal f_C[3]/v_repz
+variable cell_xy equal f_C[4]/v_repy
+variable cell_xz equal f_C[5]/v_repz
+variable cell_yz equal f_C[6]/v_repz
+
+print """
+
+Unit cell dimensions:
+> lx: ${cell_lx}
+> ly: ${cell_ly}
+> lz: ${cell_lz}
+> xy: ${cell_xy}
+> xz: ${cell_xz}
+> yz: ${cell_yz}
+
+"""
+
+#############################################################################################################################
+## CLEAN ####################################################################################################################
+#############################################################################################################################
+
+#clean up fixes
+unfix A
+unfix B
+unfix C
+
+#clean up variables
+variable myLx delete
+variable myLy delete
+variable myLz delete
+variable myxy delete
+variable myxz delete
+variable myyz delete
+
+#clean up trajectory output
+if "${traj} == 1" then &
+	"undump 1"
+
+#############################################################################################################################
+## END SCRIPT ###############################################################################################################
+#############################################################################################################################

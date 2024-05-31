@@ -12,6 +12,7 @@ LAMMPS data file via atomsk, version 2.0.3, 2020-05-21
 0.0 6.59224629412 xlo xhi
 0.0 9.35671099493 ylo yhi
 0.0 5.402160723591 zlo zhi
+0.0 0.0 0.0 xy yz xz
 
 Masses
 

@@ -78,7 +78,7 @@ def read_data(filename):
     return atoms
 
 
-def create_plumed_file(filename, k_ids, cl_ids, ow_ids, settings):
+def create_plumed_file(filename, k_ids, no3_ids, ow_ids, settings):
     HEAD = """
 RESTART
 

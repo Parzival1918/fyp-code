@@ -22,6 +22,9 @@ variable mod_ff equal            1     # set flag to use modified forcefield fil
 
 variable sol_offset equal       22     # solution offset (angstroms)
 
+variable half_z equal 20     # half the height in the z-direction used to detect the 
+                                       # concentration of solution
+
 variable rep equal               0     # replication flag (1 = TRUE)
 variable repx equal              1     # replication factor for x
 variable repy equal              1     # replication factor for y
@@ -172,6 +175,22 @@ run ${Nprod}
 
 #write new data file
 write_data prod_data.lmp nocoeff
+
+# calculate the concentration of the solution
+variable mid_pos equal zhi-((zhi-zlo)/2)
+variable height equal 2*v_half_z
+variable width equal xhi-xlo
+variable depth equal yhi-ylo
+variable conc_vol equal v_width*v_depth*v_height
+
+region conc_reg block INF INF INF INF $(v_mid_pos-v_half_z) $(v_mid_pos+v_half_z) units box
+group K type 3
+variable selection atom grmask(K,conc_reg)
+group conc_group variable selection # count only K ions
+
+print """
+Concentration: $((count(conc_group)*1000*1.666667)/(v_conc_vol):%.2f)
+"""
 
 #print details
 print "########################"

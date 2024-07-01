@@ -6,7 +6,7 @@ def get_data_files(filename: str):
     with open(filename, 'r') as f:
         for line in f:
             if "variable res string" in line:
-                sol_file = "solutions/"+line.split()[3]
+                res_file = "solutions/"+line.split()[3]
 
     check_file(res_file)
     check_file("data.lmp")

@@ -63,7 +63,10 @@ if len(args) == 1:
     print("USING DEFAULT OFFSET: 2")
     offset = 2
 elif len(args) == 2:
-    offset = args[1]
+    try:
+        offset = float(args[1])
+    except e:
+        print(f"ERROR could not parse argument as float: '{args[1]}'")
 else:
     print("Script needs 1 argument: [SOLUTION OFFSET, in angstrom]")
     sys.exit() 

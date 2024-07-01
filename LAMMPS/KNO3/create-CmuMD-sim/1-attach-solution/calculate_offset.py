@@ -56,9 +56,23 @@ def read_data(filename: str):
 
     return lowest, highest
 
+def write_to_file_data(filename: str, offset: float, highest_slab: float):
+    lines = []
+    with open(filename, 'r') as f:
+        for line in f:
+            if "variable sol_shift equal" in line:
+                line = f"variable sol_shift equal    {offset} # z shift when appending solution (angstroms)\n"
+            if "variable freeze equal" in line:
+                line = f"variable freeze equal    {highest_slab} # freeze height, set to height of slab (angstroms)\n"
+            lines.append(line)
+
+    with open(filename, 'w') as f:
+        for line in lines:
+            f.write(line)
 
 args = sys.argv
 offset = 0
+write_to_file = False
 if len(args) == 1:
     print("USING DEFAULT OFFSET: 2")
     offset = 2
@@ -67,8 +81,18 @@ elif len(args) == 2:
         offset = float(args[1])
     except e:
         print(f"ERROR could not parse argument as float: '{args[1]}'")
+elif len(args) == 3:
+    try:
+        offset = float(args[1])
+    except e:
+        print(f"ERROR could not parse argument as float: '{args[1]}'")
+
+    if args[2] == "true":
+        print("SCRIPT WILL WRITE TO 'input.lmp' FILE")
+        write_to_file = True
 else:
     print("Script needs 1 argument: [SOLUTION OFFSET, in angstrom]")
+    print("There is an optional extra argument to force the script to write the result to the input LAMMPS file: false/true (default false)")
     sys.exit() 
 
 #Extract names of slab and solution files from input.lmp
@@ -85,3 +109,9 @@ print(f"Lowest particle z-position in solution is: {lowest_sol}")
 #Calculate offset that must be added to LAMMPS input script
 lmp_offset = highest_slab - lowest_sol + offset
 print(f"Offset that must be applied is: {lmp_offset}")
+
+#Write to input file
+if write_to_file:
+    print("WRITING TO FILE... ", end="")
+    write_to_file_data("input.lmp", lmp_offset, highest_slab)
+    print("DONE")
